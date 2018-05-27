@@ -1,4 +1,4 @@
-FROM tomcat:8.0-jre8
+FROM tomcat:latest as build_env
 ##
 LABEL "io.github.islandora-collaboration-group.name"="isle-fedora"
 LABEL "io.github.islandora-collaboration-group.description"="ISLE Fedora container, responsible for storing and serving archival repository data."
@@ -9,10 +9,10 @@ LABEL "io.github.islandora-collaboration-group.maintainer"="Islandora Collaborat
 ##
 
 ###
-# COPY over tomcat config files
-COPY tomcat/server.xml /usr/local/tomcat/conf/server.xml
-COPY tomcat/web.xml /usr/local/tomcat/conf/web.xml
-COPY tomcat/tomcat-users.xml /usr/local/tomcat/conf/tomcat-users.xml
+# COPY over tomcat config files - DEPRECATED - moved into ROOTFS.
+# COPY tomcat/server.xml /usr/local/tomcat/conf/server.xml
+# COPY tomcat/web.xml /usr/local/tomcat/conf/web.xml
+# COPY tomcat/tomcat-users.xml /usr/local/tomcat/conf/tomcat-users.xml
 
 ###
 # Set up environmental variables for tomcat & dependencies installation
@@ -104,7 +104,8 @@ RUN cd /usr/local/ \
     && /usr/local/tomcat/bin/startup.sh \
     && sleep 70
 
-COPY fedora/deny-apim-if-not-localhost.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/default/deny-apim-if-not-localhost.xml
+## DEPRECATED
+# COPY fedora/deny-apim-if-not-localhost.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/default/deny-apim-if-not-localhost.xml
 
 RUN mkdir /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islandora \
     && rm /usr/local/fedora/data/fedora-xacml-policies/repository-policies/default/deny-policy-management-if-not-administrator.xml \
@@ -115,14 +116,15 @@ RUN mkdir /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islan
     && cd /usr/local/tomcat/webapps/fedora/WEB-INF/lib/ \
     && wget "https://github.com/Islandora/islandora_drupal_filter/releases/download/v7.1.9/fcrepo-drupalauthfilter-3.8.1.jar"
 
-COPY fedora/permit-apim-to-authenticated-user.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islandora/permit-apim-to-authenticated-user.xml
-COPY fedora/permit-getDatastream-unrestricted.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islandora/permit-getDatastream-unrestricted.xml
-COPY fedora/permit-getDatastreamHistory-unrestricted.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islandora/permit-getDatastreamHistory-unrestricted.xml
-COPY fedora/permit-upload-to-authenticated-user.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islandora/permit-upload-to-authenticated-user.xml
-COPY fedora/fedora-users.xml /usr/local/fedora/server/config/fedora-users.xml
-COPY fedora/logback.xml /usr/local/fedora/server/config/logback.xml
-COPY fedora/filter-drupal.xml /usr/local/fedora/server/config/filter-drupal.xml
-COPY fedora/jaas.conf /usr/local/fedora/server/config/jaas.conf
+## DEPRECATED
+# COPY fedora/permit-apim-to-authenticated-user.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islandora/permit-apim-to-authenticated-user.xml
+# COPY fedora/permit-getDatastream-unrestricted.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islandora/permit-getDatastream-unrestricted.xml
+# COPY fedora/permit-getDatastreamHistory-unrestricted.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islandora/permit-getDatastreamHistory-unrestricted.xml
+# COPY fedora/permit-upload-to-authenticated-user.xml /usr/local/fedora/data/fedora-xacml-policies/repository-policies/islandora/permit-upload-to-authenticated-user.xml
+# COPY fedora/fedora-users.xml /usr/local/fedora/server/config/fedora-users.xml
+# COPY fedora/logback.xml /usr/local/fedora/server/config/logback.xml
+# COPY fedora/filter-drupal.xml /usr/local/fedora/server/config/filter-drupal.xml
+# COPY fedora/jaas.conf /usr/local/fedora/server/config/jaas.conf
 
 
 ###
@@ -141,9 +143,8 @@ RUN wget -O /tmp/fedoragsearch-2.8.1.zip https://github.com/discoverygarden/gsea
     && rm -rf /tmp/fedoragsearch-2.8.1
 
 
-COPY gsearch/fgsconfig-basic-for-islandora.properties /usr/local/tomcat/webapps/fedoragsearch/FgsConfig/fgsconfig-basic-for-islandora.properties
-COPY gsearch/fgsconfig-basic.xml /usr/local/tomcat/webapps/fedoragsearch/FgsConfig/fgsconfig-basic.xml
-COPY gsearch/log4j.xml /usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/log4j.xml
+COPY gsearch/ /usr/local/tomcat/webapps/fedoragsearch/FgsConfig/
+# COPY gsearch/log4j.xml /usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/log4j.xml
 
 
 RUN /usr/bin/ant -f /usr/local/tomcat/webapps/fedoragsearch/FgsConfig/fgsconfig-basic.xml \
@@ -158,11 +159,7 @@ RUN /usr/bin/ant -f /usr/local/tomcat/webapps/fedoragsearch/FgsConfig/fgsconfig-
     && rm -rf /tmp/dgi_gsearch_extensions \
     && rm -rf /tmp/islandora_transforms
 
-
-COPY gsearch/foxmlToSolr.xslt /usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/index/FgsIndex/foxmlToSolr.xslt
-COPY gsearch/index.properties /usr/local/tomcat/webapps/fedoragsearch/WEB-INF/classes/fgsconfigFinal/index/FgsIndex/index.properties
-
-# Docker volume this, please.
+# Volume end-user data folder.
 VOLUME /usr/local/fedora/data
 
 EXPOSE 8080
