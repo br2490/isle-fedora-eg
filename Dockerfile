@@ -159,6 +159,8 @@ RUN /usr/bin/ant -f /usr/local/tomcat/webapps/fedoragsearch/FgsConfig/fgsconfig-
     && rm -rf /tmp/dgi_gsearch_extensions \
     && rm -rf /tmp/islandora_transforms
 
+COPY rootfs /
+
 # Volume end-user data folder.
 VOLUME /usr/local/fedora/data
 
